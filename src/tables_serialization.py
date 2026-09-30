@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
 import time
 
-message_queue = Queue()
+message_queue = Queue()  # 创建一个线程安全的 FIFO 队列（queue.Queue），全局共享 所有工作线程往里放消息，主线程从里面取
 
 class TqdmLoggingHandler(logging.Handler):
     def emit(self, record):
@@ -25,9 +25,15 @@ class TqdmLoggingHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
+# 这是一个生产者-消费者模式：工作线程（生产者）把日志塞进线程安全队列，
+# 主线程（消费者）在轮询任务状态时用 tqdm.write() 安全地输出，保证进度条和日志共存时终端显示不混乱
 def process_messages():
     while not message_queue.empty():
+        # 非阻塞取出一条消息，返回 (int, str) 元组
+        # level：int，日志级别编号（如 logging.INFO = 20）
+        # msg：str，格式化后的日志文本
         level, msg = message_queue.get_nowait()
+        #  tqdm 提供的安全输出方法，它会先暂停进度条 → 打印消息 → 重绘进度条，保证终端显示不混乱
         tqdm.write(msg)
 
 class TableSerializer(BaseOpenaiProcessor):
@@ -177,11 +183,15 @@ class TableSerializer(BaseOpenaiProcessor):
         """Process all tables in the report asynchronously"""
         queries = []
         table_indices = []
-        
+
+        # 构建queries & table_indices
+        # queries：每个表格的查询提示词
+        # table_indices 每个表格的id
         for table in json_report["tables"]:
             table_index = table["table_id"]
             table_indices.append(table_index)
-            
+
+            # 获取表格前后的正文内容
             context_before, context_after = self._get_table_context(json_report, table_index)
             table_info = next(table for table in json_report["tables"] if table["table_id"] == table_index)
             table_content = table_info["html"]
@@ -210,6 +220,7 @@ class TableSerializer(BaseOpenaiProcessor):
         )
 
         # Add results back to json_report
+        # 将序列后的表格结果添加回 json_report
         for table_index, result in zip(table_indices, results):
             table_info = next(table for table in json_report["tables"] if table["table_id"] == table_index)
             
@@ -276,21 +287,24 @@ class TableSerializer(BaseOpenaiProcessor):
             return
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # 创建进度条上下文管理器，显示处理文件进度
+            # Create progress bar context manager to show file processing progress
             with tqdm(
                 total=len(json_files),
                 desc="Processing files",
-                mininterval=1.0,
-                maxinterval=5.0,
-                smoothing=0.3
+                mininterval=1.0,  # 进度条更新的最小间隔（秒），至少 1 秒才刷新一次，避免刷屏
+                maxinterval=5.0,  # 进度条更新的最大间隔（秒），避免进度条更新得太频繁
+                smoothing=0.3  # 速度估算的平滑系数（0~1），越小越平滑，预测剩余时间越稳定
             ) as pbar:
-                futures = []
+                futures = []  # 作用：存储所有提交给线程池的 Future 对象 方便后续轮询任务状态
                 for json_file in json_files:
-                    future = executor.submit(self.process_file, json_file)
-                    future.add_done_callback(lambda p: pbar.update(1))
+                    future = executor.submit(self.process_file, json_file)  # future 的类型是 Future，代表一个"尚未完成的异步任务"的句柄
+                    # 给future添加回调函数，当future完成时，更新进度条
+                    future.add_done_callback(lambda p: pbar.update(1))  # pbar.update(1) 返回 int（更新后的进度值），进度条前进 1 格
                     futures.append(future)
                 
-                while futures:
-                    process_messages()
+                while futures:  # 当 futures 列表非空时（还有未完成的任务），持续循环
+                    process_messages()  # 查看各线程任务状态，并在前端打印显示
                     
                     done_futures = []
                     for future in futures:
@@ -309,7 +323,7 @@ class TableSerializer(BaseOpenaiProcessor):
         process_messages()
         self.logger.info("Table serialization completed!")
 
-
+# 定义表格序列化类，用于将表格信息块进行序列化，生成独立的背景信息块，以便于后续的数据库填充
 class TableSerialization:
         
     system_prompt = (
@@ -319,7 +333,8 @@ class TableSerialization:
     )
 
     class SerializedInformationBlock(BaseModel):
-        "A single self-contained information block enriched with comprehensive context"
+        """一个自包含的信息块，富有了全面的背景信息"""
+        """A single self-contained information block enriched with comprehensive context"""
 
         subject_core_entity: str = Field(description="A primary focus of what this block is about. Usually located in a row header. If one row in the table doesn't make sense without neighboring rows, you can merge information from neighboring rows into one block")
         information_block: str = Field(description=(
@@ -337,6 +352,7 @@ class TableSerialization:
     ))
 
     class TableBlocksCollection(BaseModel):
+        """一个包含表格块集合的类，每个块都有核心实体和标题关系"""
         """Collection of serialized table blocks with their core entities and header relationships"""
 
         subject_core_entities_list: List[str] = Field(

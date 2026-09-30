@@ -15,19 +15,20 @@ class TextSplitter():
             page = table['page']
             if page not in tables_by_page:
                 tables_by_page[page] = []
-            
+
+            # 将表格的多条序列化内容拼接为1条
             table_text = "\n".join(
                 block["information_block"] 
                 for block in table["serialized"]["information_blocks"]
             )
-            
+            # 将处理后的表格内容添加到对应页码的列表中
             tables_by_page[page].append({
                 "page": page,
                 "text": table_text,
                 "table_id": table["table_id"],
                 "length_tokens": self.count_tokens(table_text)
             })
-            
+
         return tables_by_page
 
     def _split_report(self, file_content: Dict[str, any], serialized_tables_report_path: Optional[Path] = None) -> Dict[str, any]:
@@ -39,23 +40,25 @@ class TextSplitter():
         if serialized_tables_report_path is not None:
             with open(serialized_tables_report_path, 'r', encoding='utf-8') as f:
                 parsed_report = json.load(f)
+            # 获取报告中所有的序列化表格内容，还没有embedding
             tables_by_page = self._get_serialized_tables_by_page(parsed_report.get('tables', []))
         
         for page in file_content['content']['pages']:
+            # 切分单页内容
             page_chunks = self._split_page(page)
             for chunk in page_chunks:
                 chunk['id'] = chunk_id
                 chunk['type'] = 'content'
                 chunk_id += 1
                 chunks.append(chunk)
-            
+            # 添加单页的序列化表格
             if tables_by_page and page['page'] in tables_by_page:
                 for table in tables_by_page[page['page']]:
                     table['id'] = chunk_id
                     table['type'] = 'serialized_table'
                     chunk_id += 1
                     chunks.append(table)
-        
+        # 将处理后的单页内容添加到总列表中
         file_content['content']['chunks'] = chunks
         return file_content
 

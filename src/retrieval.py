@@ -18,7 +18,7 @@ class BM25Retriever:
         self.bm25_db_dir = bm25_db_dir
         self.documents_dir = documents_dir
         
-    def retrieve_by_company_name(self, company_name: str, query: str, top_n: int = 3, return_parent_pages: bool = False) -> List[Dict]:
+    def retrieve_by_company_nameretrieve_by_company_name(self, company_name: str, query: str, top_n: int = 3, return_parent_pages: bool = False) -> List[Dict]:
         document_path = None
         for path in self.documents_dir.glob("*.json"):
             with open(path, 'r', encoding='utf-8') as f:

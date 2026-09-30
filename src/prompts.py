@@ -139,8 +139,6 @@ Answer:
 
     system_prompt_with_schema = build_system_prompt(instruction, example, pydantic_schema)
 
-
-
 class AnswerWithRAGContextNumberPrompt:
     instruction = AnswerWithRAGContextSharedPrompt.instruction
     user_prompt = AnswerWithRAGContextSharedPrompt.user_prompt
@@ -236,8 +234,6 @@ Answer:
 
     system_prompt_with_schema = build_system_prompt(instruction, example, pydantic_schema)
 
-
-
 class AnswerWithRAGContextBooleanPrompt:
     instruction = AnswerWithRAGContextSharedPrompt.instruction
     user_prompt = AnswerWithRAGContextSharedPrompt.user_prompt
@@ -280,8 +276,6 @@ Answer:
     system_prompt = build_system_prompt(instruction, example)
 
     system_prompt_with_schema = build_system_prompt(instruction, example, pydantic_schema)
-
-
 
 class AnswerWithRAGContextNamesPrompt:
     instruction = AnswerWithRAGContextSharedPrompt.instruction
@@ -401,7 +395,6 @@ Answer:
     system_prompt = build_system_prompt(instruction, example)
     
     system_prompt_with_schema = build_system_prompt(instruction, example, pydantic_schema)
-
 
 class AnswerSchemaFixPrompt:
     system_prompt = """

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG-Challenge-2 项目全景概览</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root { --bg:#f8f9fa;--card:#fff;--pri:#2563eb;--pri-l:#dbeafe;--txt:#1e293b;--txt2:#64748b;--bdr:#e2e8f0;--code-bg:#1e293b;--code-t:#e2e8f0;--green:#059669;--purple:#7c3aed;--orange:#f59e0b;--red:#ef4444;--pink:#ec4899; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC",sans-serif;background:var(--bg);color:var(--txt);line-height:1.7;padding:2rem 1rem}
+        .ctn{max-width:1100px;margin:0 auto}
+        .hdr{background:linear-gradient(135deg,#0f172a,#1e40af,#2563eb);color:#fff;border-radius:16px;padding:2.5rem 2rem;margin-bottom:2rem;text-align:center}
+        .hdr h1{font-size:2.1rem;margin-bottom:.4rem}
+        .hdr p{font-size:1.05rem;opacity:.88}
+        .toc{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:1.5rem 2rem;margin-bottom:2rem}
+        .toc h2{font-size:1.15rem;margin-bottom:.8rem;color:var(--pri)}
+        .toc ol{padding-left:1.4rem}.toc li{margin-bottom:.35rem}.toc a{color:var(--pri);text-decoration:none}.toc a:hover{text-decoration:underline}
+        .cd{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:1.8rem 2rem;margin-bottom:1.8rem}
+        .cd h2{font-size:1.3rem;color:var(--pri);margin-bottom:1rem;border-bottom:2px solid var(--pri-l);padding-bottom:.4rem}
+        .cd h3{font-size:1.08rem;color:var(--txt);margin:1.2rem 0 .6rem}
+        pre{background:var(--code-bg);color:var(--code-t);border-radius:8px;padding:1rem 1.2rem;overflow-x:auto;font-size:.88rem;line-height:1.6;margin:.8rem 0}
+        code{font-family:"JetBrains Mono","Fira Code",Consolas,monospace}
+        p code,li code,td code{background:#e0e7ff;color:#3730a3;padding:.15rem .4rem;border-radius:4px;font-size:.85em}
+        table{width:100%;border-collapse:collapse;margin:.8rem 0;font-size:.92rem}
+        th{background:var(--pri);color:#fff;padding:.6rem .8rem;text-align:left}
+        td{padding:.55rem .8rem;border-bottom:1px solid var(--bdr)}
+        tr:nth-child(even) td{background:#f1f5f9}
+        .tag{display:inline-block;padding:.15rem .55rem;border-radius:6px;font-size:.78rem;font-weight:600;margin-right:.3rem}
+        .tb{background:#dbeafe;color:#1d4ed8}.tg{background:#d1fae5;color:#065f46}.tp{background:#ede9fe;color:#5b21b6}.to{background:#fef3c7;color:#92400e}.tr{background:#fee2e2;color:#991b1b}
+        .hb{border-left:4px solid var(--pri);background:var(--pri-l);padding:.8rem 1rem;border-radius:0 8px 8px 0;margin:.8rem 0;font-size:.93rem}
+        .hb.green{border-color:var(--green);background:#d1fae5}.hb.orange{border-color:var(--orange);background:#fef3c7}.hb.purple{border-color:var(--purple);background:#ede9fe}.hb.red{border-color:var(--red);background:#fee2e2}
+        .mermaid{margin:1rem 0;text-align:center}
+        .svg-c{display:flex;justify-content:center;margin:1rem 0;overflow-x:auto}
+        ul,ol{padding-left:1.5rem;margin:.5rem 0}li{margin-bottom:.3rem}
+        .ft{text-align:center;color:var(--txt2);font-size:.82rem;margin-top:2rem;padding:1rem}
+        .stage-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;color:#fff;font-weight:bold;font-size:.95rem;margin-right:.5rem}
+    </style>
+</head>
+<body>
+<div class="ctn">
+
+<div class="hdr">
+    <h1>🏗️ RAG-Challenge-2 项目全景概览</h1>
+    <p>从 PDF 到答案 — 六步流水线完整梳理</p>
+</div>
+
+<div class="toc">
+    <h2>📑 目录</h2>
+    <ol>
+        <li><a href="#overview">项目总览与流水线全景图</a></li>
+        <li><a href="#s1">阶段 1：PDF 文档解析</a></li>
+        <li><a href="#s2">阶段 2：序列化表格</a></li>
+        <li><a href="#s3">阶段 3：合并报告</a></li>
+        <li><a href="#s4">阶段 4：文本切片</a></li>
+        <li><a href="#s5">阶段 5：构建向量 &amp; BM25 索引</a></li>
+        <li><a href="#s6">阶段 6：查询与答案生成</a></li>
+        <li><a href="#configs">预设运行配置</a></li>
+        <li><a href="#files">源文件速查表</a></li>
+    </ol>
+</div>
+
+<!-- ====== OVERVIEW ====== -->
+<div class="cd" id="overview">
+    <h2>项目总览与流水线全景图</h2>
+    <p>本项目是一个完整的 <strong>RAG（检索增强生成）系统</strong>，用于从公司年报 PDF 中提取信息并回答结构化问题。整个流水线分为 <strong>6 个阶段</strong>，由 <code>pipeline.py</code> 统一编排。</p>
+
+    <div class="mermaid">
+graph LR
+    A["📄 PDF 文件"] -->|阶段1| B["结构化 JSON"]
+    B -->|阶段2| C["序列化表格 JSON"]
+    C -->|阶段3| D["Markdown 页面文本"]
+    D -->|阶段4| E["文本 Chunks"]
+    E -->|阶段5| F["FAISS + BM25 索引"]
+    F -->|阶段6| G["📝 答案 JSON"]
+    style A fill:#fef3c7,stroke:#f59e0b,color:#1e293b
+    style G fill:#d1fae5,stroke:#059669,color:#1e293b
+    </div>
+
+    <h3>涉及文件总览</h3>
+    <table>
+        <tr><th>阶段</th><th>调用的 .py 文件</th><th>核心类 / 函数</th></tr>
+        <tr><td><span class="tag to">1. PDF 解析</span></td><td>pdf_parsing.py</td><td><code>PDFParser</code>, <code>JsonReportProcessor</code></td></tr>
+        <tr><td><span class="tag tp">2. 表格序列化</span></td><td>tables_serialization.py</td><td><code>TableSerializer</code>, <code>TableSerialization</code></td></tr>
+        <tr><td><span class="tag tg">3. 合并报告</span></td><td>parsed_reports_merging.py</td><td><code>PageTextPreparation</code></td></tr>
+        <tr><td><span class="tag tb">4. 文本切片</span></td><td>text_splitter.py</td><td><code>TextSplitter</code></td></tr>
+        <tr><td><span class="tag tr">5. 索引构建</span></td><td>ingestion.py</td><td><code>VectorDBIngestor</code>, <code>BM25Ingestor</code></td></tr>
+        <tr><td><span class="tag tp">6. 查询生成</span></td><td>questions_processing.py + retrieval.py + reranking.py + api_requests.py</td><td><code>QuestionsProcessor</code>, <code>VectorRetriever</code>, <code>HybridRetriever</code>, <code>LLMReranker</code>, <code>APIProcessor</code></td></tr>
+    </table>
+</div>
+
+<!-- ====== STAGE 1 ====== -->
+<div class="cd" id="s1">
+    <h2><span class="stage-num" style="background:#f59e0b">1</span> PDF 文档解析</h2>
+
+    <h3>功能说明</h3>
+    <p>将原始 PDF 年报文件通过 <strong>Docling</strong> 库解析为结构化 JSON，提取文本、表格、图片等元素，并按页码组织。</p>
+
+    <h3>调用链路</h3>
+    <table>
+        <tr><th>调用方</th><th>被调用文件</th><th>函数</th><th>说明</th></tr>
+        <tr>
+            <td><code>pipeline.py</code></td>
+            <td><code>pdf_parsing.py</code></td>
+            <td><code>PDFParser.parse_and_export()</code><br>或 <code>PDFParser.parse_and_export_parallel()</code></td>
+            <td>Pipeline 入口，支持顺序/并行两种模式</td>
+        </tr>
+    </table>
+
+    <h3>内部函数调用链</h3>
+    <div class="mermaid">
+graph TB
+    A["parse_and_export() / parse_and_export_parallel()"] --> B["convert_documents()<br/>Docling 转换 PDF"]
+    B --> C["process_documents()<br/>处理转换结果"]
+    C --> D["_normalize_page_sequence()<br/>填充页码间隙"]
+    D --> E["JsonReportProcessor.assemble_report()<br/>组装完整报告"]
+    E --> E1["assemble_metainfo()<br/>提取元信息"]
+    E --> E2["assemble_content()<br/>按页组织 blocks"]
+    E --> E3["assemble_tables()<br/>表格三格式输出"]
+    E --> E4["assemble_pictures()<br/>图片信息"]
+    E2 --> E5["expand_groups()<br/>展开组引用"]
+    style A fill:#fef3c7,stroke:#f59e0b,color:#1e293b
+    style E fill:#dbeafe,stroke:#2563eb,color:#1e293b
+    </div>
+
+    <h3>两种执行模式</h3>
+    <table>
+        <tr><th>模式</th><th>Pipeline 方法</th><th>底层函数</th><th>实现方式</th></tr>
+        <tr>
+            <td><span class="tag tg">顺序模式</span></td>
+            <td><code>parse_pdf_reports_sequential()</code></td>
+            <td><code>PDFParser.parse_and_export()</code></td>
+            <td>单进程逐个处理 PDF</td>
+        </tr>
+        <tr>
+            <td><span class="tag tp">并行模式</span></td>
+            <td><code>parse_pdf_reports_parallel()</code></td>
+            <td><code>PDFParser.parse_and_export_parallel()</code></td>
+            <td><code>ProcessPoolExecutor</code> 多进程并行</td>
+        </tr>
+    </table>
+
+    <h3>输入与输出</h3>
+    <table>
+        <tr><th>输入</th><th>输出</th></tr>
+        <tr>
+            <td>PDF 文件目录（<code>pdf_reports/*.pdf</code>）<br>+ 公司元数据 CSV（<code>subset.csv</code>）</td>
+            <td>结构化 JSON 文件（<code>debug_data/01_parsed_reports/*.json</code>）<br>每个 JSON 包含 <code>metainfo</code>、<code>content</code>（按页 blocks）、<code>tables</code>（Markdown/HTML/JSON 三格式）、<code>pictures</code></td>
+        </tr>
+    </table>
+</div>
+
+<!-- ====== STAGE 2 ====== -->
+<div class="cd" id="s2">
+    <h2><span class="stage-num" style="background:#7c3aed">2</span> 序列化表格</h2>
+
+    <h3>功能说明</h3>
+    <p>将阶段 1 提取的 HTML 表格通过 <strong>LLM 结构化输出</strong>转化为上下文独立的信息块。解决的问题是：表格被切分后可能丢失表头、单位等关键上下文，序列化后每个信息块都能独立被检索和理解。</p>
+
+    <div class="hb orange">
+        <strong>⚠️ 可选阶段：</strong>仅在 <code>RunConfig.use_serialized_tables=True</code> 时执行。
+    </div>
+
+    <h3>调用链路</h3>
+    <table>
+        <tr><th>调用方</th><th>被调用文件</th><th>函数</th><th>说明</th></tr>
+        <tr>
+            <td><code>pipeline.py</code></td>
+            <td><code>tables_serialization.py</code></td>
+            <td><code>TableSerializer.process_directory_parallel()</code></td>
+            <td>多线程并行处理所有 JSON 报告中的表格</td>
+        </tr>
+    </table>
+
+    <h3>内部函数调用链</h3>
+    <div class="mermaid">
+graph TB
+    A["process_directory_parallel()<br/>ThreadPoolExecutor 多线程"] --> B["process_file()<br/>处理单个 JSON 文件"]
+    B --> C["async_serialize_tables()<br/>异步批量序列化"]
+    C --> D["_get_table_context()<br/>提取表格前后文"]
+    C --> E["AsyncOpenaiProcessor<br/>.process_structured_ouputs_requests()"]
+    E --> F["api_request_parallel_processor<br/>.process_api_requests_from_file()<br/>JSONL 文件驱动并发"]
+    F --> G["OpenAI API<br/>GPT-4o-mini 结构化输出"]
+    style A fill:#ede9fe,stroke:#7c3aed,color:#1e293b
+    style G fill:#fef3c7,stroke:#f59e0b,color:#1e293b
+    </div>
+
+    <h3>输入与输出</h3>
+    <table>
+        <tr><th>输入</th><th>输出</th></tr>
+        <tr>
+            <td>阶段 1 的 JSON 报告（<code>01_parsed_reports/*.json</code>）<br>每个表格的 HTML + 前后文上下文</td>
+            <td>原地修改 JSON，在每个 table 对象中新增 <code>serialized</code> 字段<br>包含 <code>subject_core_entities_list</code>、<code>relevant_headers_list</code>、<code>information_blocks</code></td>
+        </tr>
+    </table>
+</div>
+
+<!-- ====== STAGE 3 ====== -->
+<div class="cd" id="s3">
+    <h2><span class="stage-num" style="background:#059669">3</span> 合并报告</h2>
+
+    <h3>功能说明</h3>
+    <p>将阶段 1 产出的复杂结构化 JSON（按页的 blocks 数组）转换为 <strong>简洁的按页 Markdown 文本</strong>。这一步是"从结构化到文本"的桥梁，为后续切块做准备。</p>
+
+    <h3>调用链路</h3>
+    <table>
+        <tr><th>调用方</th><th>被调用文件</th><th>函数</th><th>说明</th></tr>
+        <tr>
+            <td><code>pipeline.py</code></td>
+            <td><code>parsed_reports_merging.py</code></td>
+            <td><code>PageTextPreparation.process_reports()</code></td>
+            <td>批量处理所有报告</td>
+        </tr>
+    </table>
+
+    <h3>内部函数调用链</h3>
+    <div class="mermaid">
+graph TB
+    A["process_reports()"] --> B["process_report()<br/>处理单份报告"]
+    B --> C["prepare_page_text()<br/>处理单页文本"]
+    C --> D["_filter_blocks()<br/>移除 page_footer / picture"]
+    D --> E["_apply_formatting_rules()<br/>格式化规则引擎"]
+    E --> E1["header → Markdown #/##"]
+    E --> E2["paragraph → ###"]
+    E --> E3["table → Markdown 表格<br/>或 + 序列化表格"]
+    E --> E4["list_item → 列表项"]
+    E --> E5["footnote → 脚注文本"]
+    B --> F["_clean_text()<br/>修复 Docling 特殊字符"]
+    style A fill:#d1fae5,stroke:#059669,color:#1e293b
+    style E fill:#dbeafe,stroke:#2563eb,color:#1e293b
+    </div>
+
+    <h3>两种表格呈现选项</h3>
+    <table>
+        <tr><th>选项</th><th>构造参数</th><th>效果</th></tr>
+        <tr>
+            <td><span class="tag tg">纯 Markdown</span></td>
+            <td><code>use_serialized_tables=False</code></td>
+            <td>表格以 Markdown 格式呈现</td>
+        </tr>
+        <tr>
+            <td><span class="tag tp">Markdown + 序列化</span></td>
+            <td><code>use_serialized_tables=True</code></td>
+            <td>Markdown 表格 + 序列化信息块描述拼接在一起</td>
+        </tr>
+    </table>
+
+    <h3>输入与输出</h3>
+    <table>
+        <tr><th>输入</th><th>输出</th></tr>
+        <tr>
+            <td>阶段 1 的 JSON 报告（<code>01_parsed_reports/*.json</code>）</td>
+            <td>简化 JSON（<code>02_merged_reports/*.json</code>）<br>结构：<code>{metainfo, content: {chunks: null, pages: [{page, text}]}}</code></td>
+        </tr>
+    </table>
+</div>
+
+<!-- ====== STAGE 4 ====== -->
+<div class="cd" id="s4">
+    <h2><span class="stage-num" style="background:#2563eb">4</span> 文本切片</h2>
+
+    <h3>功能说明</h3>
+    <p>将阶段 3 产出的按页 Markdown 文本切分为适合向量化的 <strong>chunks</strong>。使用 LangChain 的 <code>RecursiveCharacterTextSplitter</code>，按 token 数切分并保留重叠。</p>
+
+    <h3>调用链路</h3>
+    <table>
+        <tr><th>调用方</th><th>被调用文件</th><th>函数</th><th>说明</th></tr>
+        <tr>
+            <td><code>pipeline.py</code></td>
+            <td><code>text_splitter.py</code></td>
+            <td><code>TextSplitter.split_all_reports()</code></td>
+            <td>批量切分所有报告</td>
+        </tr>
+    </table>
+
+    <h3>内部函数调用链</h3>
+    <div class="mermaid">
+graph TB
+    A["split_all_reports()<br/>遍历所有报告"] --> B["_split_report()<br/>切分单份报告"]
+    B --> C["_split_page()<br/>切分单页"]
+    C --> D["RecursiveCharacterTextSplitter<br/>chunk_size=300 tokens<br/>chunk_overlap=50 tokens"]
+    B --> E["序列化表格注入<br/>serialized_table chunks"]
+    style A fill:#dbeafe,stroke:#2563eb,color:#1e293b
+    </div>
+
+    <h3>两种 Chunk 类型</h3>
+    <table>
+        <tr><th>类型</th><th>来源</th><th>内容</th></tr>
+        <tr>
+            <td><span class="tag tb">content chunk</span></td>
+            <td>RecursiveCharacterTextSplitter 切分</td>
+            <td>报告正文的文本片段（~300 tokens）</td>
+        </tr>
+        <tr>
+            <td><span class="tag tp">serialized_table chunk</span></td>
+            <td>序列化表格直接作为独立 chunk</td>
+            <td>完整的表格信息块（不经过切分）</td>
+        </tr>
+    </table>
+
+    <h3>输入与输出</h3>
+    <table>
+        <tr><th>输入</th><th>输出</th></tr>
+        <tr>
+            <td>阶段 3 的合并 JSON（<code>02_merged_reports/*.json</code>）<br>+ 可选的序列化表格目录</td>
+            <td>分块 JSON（<code>databases/chunked_reports/*.json</code>）<br>结构：<code>{metainfo, content: {chunks: [{text, metadata}]}}</code></td>
+        </tr>
+    </table>
+</div>
+
+<!-- ====== STAGE 5 ====== -->
+<div class="cd" id="s5">
+    <h2><span class="stage-num" style="background:#ef4444">5</span> 构建向量 &amp; BM25 索引</h2>
+
+    <h3>功能说明</h3>
+    <p>将阶段 4 的文本 chunks 构建为两种检索索引：<strong>FAISS 向量索引</strong>（语义检索）和 <strong>BM25 索引</strong>（关键词检索），供阶段 6 的检索使用。</p>
+
+    <h3>调用链路</h3>
+    <table>
+        <tr><th>调用方</th><th>被调用文件</th><th>函数</th><th>说明</th></tr>
+        <tr>
+            <td><code>pipeline.py</code></td>
+            <td><code>ingestion.py</code></td>
+            <td><code>VectorDBIngestor.process_reports()</code></td>
+            <td>构建 FAISS 向量索引</td>
+        </tr>
+        <tr>
+            <td><code>pipeline.py</code></td>
+            <td><code>ingestion.py</code></td>
+            <td><code>BM25Ingestor.process_reports()</code></td>
+            <td>构建 BM25 关键词索引（可选）</td>
+        </tr>
+    </table>
+
+    <h3>向量索引内部流程</h3>
+    <div class="mermaid">
+graph LR
+    A["chunked_reports<br/>/*.json"] --> B["提取 text 字段"]
+    B --> C["_get_embeddings()<br/>OpenAI text-embedding-3-large<br/>每批 1024 条"]
+    C --> D["3072 维向量"]
+    D --> E["_create_vector_db()<br/>FAISS IndexFlatIP"]
+    E --> F["*.faiss 文件"]
+    style A fill:#fef3c7,stroke:#f59e0b,color:#1e293b
+    style F fill:#dbeafe,stroke:#2563eb,color:#1e293b
+    </div>
+
+    <h3>两种索引对比</h3>
+    <table>
+        <tr><th>维度</th><th><span class="tag tb">FAISS 向量索引</span></th><th><span class="tag tg">BM25 索引</span></th></tr>
+        <tr><td>类</td><td><code>VectorDBIngestor</code></td><td><code>BM25Ingestor</code></td></tr>
+        <tr><td>算法</td><td>OpenAI embedding + IndexFlatIP</td><td>BM25Okapi（空格分词 + TF-IDF）</td></tr>
+        <tr><td>输出</td><td><code>*.faiss</code> 文件</td><td><code>*.pkl</code> 文件（Pickle）</td></tr>
+        <tr><td>擅长</td><td>语义相似度匹配</td><td>精确关键词匹配</td></tr>
+        <tr><td>外部依赖</td><td>openai + faiss + numpy</td><td>rank_bm25</td></tr>
+    </table>
+
+    <h3>输入与输出</h3>
+    <table>
+        <tr><th>输入</th><th>输出</th></tr>
+        <tr>
+            <td>阶段 4 的分块 JSON（<code>chunked_reports/*.json</code>）</td>
+            <td>FAISS：<code>databases/vector_dbs/*.faiss</code><br>BM25：<code>databases/bm25_dbs/*.pkl</code></td>
+        </tr>
+    </table>
+</div>
+
+<!-- ====== STAGE 6 ====== -->
+<div class="cd" id="s6">
+    <h2><span class="stage-num" style="background:#7c3aed">6</span> 查询与答案生成</h2>
+
+    <h3>功能说明</h3>
+    <p>这是整个流水线的最终阶段，负责：接收问题 → 提取公司名 → 检索相关上下文 → LLM 生成结构化答案 → 页码验证 → 保存结果。支持单公司问题和多公司对比问题。</p>
+
+    <h3>调用链路</h3>
+    <table>
+        <tr><th>调用方</th><th>被调用文件</th><th>函数</th><th>说明</th></tr>
+        <tr>
+            <td><code>pipeline.py</code></td>
+            <td><code>questions_processing.py</code></td>
+            <td><code>QuestionsProcessor.process_all_questions()</code></td>
+            <td>顶层入口</td>
+        </tr>
+        <tr>
+            <td><code>questions_processing.py</code></td>
+            <td><code>retrieval.py</code></td>
+            <td><code>VectorRetriever.retrieve_by_company_name()</code><br>或 <code>HybridRetriever.retrieve_by_company_name()</code></td>
+            <td>检索相关上下文</td>
+        </tr>
+        <tr>
+            <td><code>questions_processing.py</code></td>
+            <td><code>api_requests.py</code></td>
+            <td><code>APIProcessor.get_answer_from_rag_context()</code></td>
+            <td>LLM 生成结构化答案</td>
+        </tr>
+        <tr>
+            <td><code>retrieval.py</code> (Hybrid)</td>
+            <td><code>reranking.py</code></td>
+            <td><code>LLMReranker.rerank_documents()</code></td>
+            <td>LLM 重排序检索结果（可选）</td>
+        </tr>
+    </table>
+
+    <h3>完整处理流程</h3>
+    <div class="mermaid">
+graph TB
+    A["问题 JSON"] --> B["_load_questions()<br/>加载问题列表"]
+    B --> C["process_questions_list()<br/>批量处理（可并行）"]
+    C --> D["_process_single_question()<br/>处理单个问题"]
+    D --> E["_extract_companies_from_subset()<br/>提取公司名"]
+    E --> F{"公司数量?"}
+    F -->|0| G["抛出异常"]
+    F -->|1| H["get_answer_for_company()"]
+    F -->|2+| I["process_comparative_question()"]
+
+    I --> I1["APIProcessor.get_rephrased_questions()<br/>LLM 拆分子问题"]
+    I1 --> I2["并行: 各公司 get_answer_for_company()"]
+    I2 --> I3["APIProcessor.get_answer_from_rag_context()<br/>LLM 汇总对比"]
+
+    H --> J{"检索模式?"}
+    J -->|llm_reranking=False| K["VectorRetriever<br/>.retrieve_by_company_name()"]
+    J -->|llm_reranking=True| L["HybridRetriever<br/>.retrieve_by_company_name()"]
+    J -->|full_context=True| K2["VectorRetriever<br/>.retrieve_all()"]
+    L --> L1["VectorRetriever 先检索"]
+    L1 --> L2["LLMReranker.rerank_documents()<br/>LLM 重排序"]
+
+    K --> M["_format_retrieval_results()<br/>格式化上下文"]
+    L2 --> M
+    K2 --> M2["全部页面作为上下文"]
+    M --> N["APIProcessor.get_answer_from_rag_context()<br/>LLM 结构化回答"]
+    M2 --> N
+    N --> O["_validate_page_references()<br/>页码防幻觉验证"]
+    O --> P["_extract_references()<br/>构建引用"]
+    P --> Q["_save_progress()<br/>保存 JSON"]
+
+    style A fill:#fef3c7,stroke:#f59e0b,color:#1e293b
+    style Q fill:#d1fae5,stroke:#059669,color:#1e293b
+    </div>
+
+    <h3>检索模式选项</h3>
+    <table>
+        <tr><th>模式</th><th>配置</th><th>调用函数</th><th>说明</th></tr>
+        <tr>
+            <td><span class="tag tb">向量检索</span></td>
+            <td><code>llm_reranking=False</code></td>
+            <td><code>VectorRetriever.retrieve_by_company_name()</code></td>
+            <td>FAISS 内积搜索，返回 top-N chunks</td>
+        </tr>
+        <tr>
+            <td><span class="tag tp">混合检索 + 重排序</span></td>
+            <td><code>llm_reranking=True</code></td>
+            <td><code>HybridRetriever.retrieve_by_company_name()</code><br>→ <code>LLMReranker.rerank_documents()</code></td>
+            <td>先检索 20~36 个，LLM 打分后加权融合，取 top-N</td>
+        </tr>
+        <tr>
+            <td><span class="tag tg">全上下文</span></td>
+            <td><code>full_context=True</code></td>
+            <td><code>VectorRetriever.retrieve_all()</code></td>
+            <td>返回公司报告的所有页面</td>
+        </tr>
+        <tr>
+            <td><span class="tag to">父文档检索</span></td>
+            <td><code>parent_document_retrieval=True</code></td>
+            <td>上述任一 + <code>return_parent_pages=True</code></td>
+            <td>返回 chunk 所在的整页文本而非 chunk 本身</td>
+        </tr>
+    </table>
+
+    <h3>LLM 提供商选项</h3>
+    <table>
+        <tr><th>Provider</th><th>配置</th><th>底层类</th><th>默认模型</th></tr>
+        <tr><td><span class="tag tb">OpenAI</span></td><td><code>api_provider="openai"</code></td><td><code>BaseOpenaiProcessor</code></td><td>gpt-4o / gpt-4o-mini / o3-mini</td></tr>
+        <tr><td><span class="tag tg">IBM WatsonX</span></td><td><code>api_provider="ibm"</code></td><td><code>BaseIBMAPIProcessor</code></td><td>llama-3.3-70b-instruct</td></tr>
+        <tr><td><span class="tag tp">Gemini</span></td><td><code>api_provider="gemini"</code></td><td><code>BaseGeminiProcessor</code></td><td>gemini-2.0-flash</td></tr>
+    </table>
+
+    <h3>LLM 重排序细节</h3>
+    <p>当 <code>llm_reranking=True</code> 时，<code>reranking.py</code> 中的 <code>LLMReranker</code> 会：</p>
+    <ol>
+        <li>先用 <code>VectorRetriever</code> 检索 <code>llm_reranking_sample_size</code>（默认 20~36）个结果</li>
+        <li>将结果分批（每批 <code>documents_batch_size</code> 个），用 GPT-4o-mini 对每批打分（0~1 相关性分数）</li>
+        <li>加权融合：<code>combined_score = llm_weight × LLM分数 + (1-llm_weight) × 向量相似度</code>（默认 llm_weight=0.7）</li>
+        <li>按 <code>combined_score</code> 降序排列，取前 <code>top_n</code> 个</li>
+    </ol>
+
+    <h3>输入与输出</h3>
+    <table>
+        <tr><th>输入</th><th>输出</th></tr>
+        <tr>
+            <td>问题 JSON（<code>questions.json</code>）<br>+ FAISS/BM25 索引<br>+ 分块报告 JSON<br>+ 公司子集 CSV</td>
+            <td>答案 JSON（<code>answers_*.json</code>）<br>调试 JSON（<code>answers_*_debug.json</code>）<br>包含：question_text, kind, value, references, answer_details</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ====== CONFIGS ====== -->
+<div class="cd" id="configs">
+    <h2>预设运行配置</h2>
+    <p><code>pipeline.py</code> 中预定义了 12 种 <code>RunConfig</code> 配置，覆盖不同策略组合：</p>
+    <table>
+        <tr><th>配置名</th><th>序列化表格</th><th>父文档</th><th>LLM重排序</th><th>LLM 提供商</th><th>回答模型</th></tr>
+        <tr><td><code>base</code></td><td>✗</td><td>✗</td><td>✗</td><td>OpenAI</td><td>gpt-4o-mini</td></tr>
+        <tr><td><code>pdr</code></td><td>✗</td><td>✓</td><td>✗</td><td>OpenAI</td><td>gpt-4o</td></tr>
+        <tr><td><code>max</code></td><td>✓</td><td>✓</td><td>✓</td><td>OpenAI</td><td>gpt-4o</td></tr>
+        <tr><td><code>max_nst_o3m</code> ⭐</td><td>✗</td><td>✓</td><td>✓</td><td>OpenAI</td><td>o3-mini</td></tr>
+        <tr><td><code>max_st_o3m</code></td><td>✓</td><td>✓</td><td>✓</td><td>OpenAI</td><td>o3-mini</td></tr>
+        <tr><td><code>ibm_llama70b</code></td><td>✗</td><td>✓</td><td>✗</td><td>IBM</td><td>llama-3.3-70b</td></tr>
+        <tr><td><code>gemini_thinking</code></td><td>✗</td><td>✓</td><td>✗</td><td>Gemini</td><td>gemini-2.0-flash-thinking</td></tr>
+    </table>
+    <div class="hb green"><strong>⭐ 最佳配置：</strong><code>max_nst_o3m_config</code> 在竞赛中取得了最佳成绩。</div>
+</div>
+
+<!-- ====== FILES ====== -->
+<div class="cd" id="files">
+    <h2>源文件速查表</h2>
+    <table>
+        <tr><th>文件</th><th>行数</th><th>核心类</th><th>所属阶段</th><th>职责</th></tr>
+        <tr><td><code>pipeline.py</code></td><td>487</td><td>Pipeline, PipelineConfig, RunConfig</td><td>全局</td><td>流水线编排、配置管理</td></tr>
+        <tr><td><code>pdf_parsing.py</code></td><td>538</td><td>PDFParser, JsonReportProcessor</td><td>阶段 1</td><td>Docling PDF 解析、JSON 报告组装</td></tr>
+        <tr><td><code>tables_serialization.py</code></td><td>346</td><td>TableSerializer, TableSerialization</td><td>阶段 2</td><td>LLM 表格序列化为独立信息块</td></tr>
+        <tr><td><code>parsed_reports_merging.py</code></td><td>437</td><td>PageTextPreparation</td><td>阶段 3</td><td>结构化 JSON → 按页 Markdown</td></tr>
+        <tr><td><code>text_splitter.py</code></td><td>108</td><td>TextSplitter</td><td>阶段 4</td><td>RecursiveCharacterTextSplitter 文本切块</td></tr>
+        <tr><td><code>ingestion.py</code></td><td>107</td><td>VectorDBIngestor, BM25Ingestor</td><td>阶段 5</td><td>FAISS 向量索引 + BM25 索引构建</td></tr>
+        <tr><td><code>retrieval.py</code></td><td>287</td><td>VectorRetriever, HybridRetriever, BM25Retriever</td><td>阶段 6</td><td>向量检索、混合检索、BM25 检索</td></tr>
+        <tr><td><code>reranking.py</code></td><td>159</td><td>LLMReranker, JinaReranker</td><td>阶段 6</td><td>LLM 重排序、Jina API 重排序</td></tr>
+        <tr><td><code>questions_processing.py</code></td><td>519</td><td>QuestionsProcessor</td><td>阶段 6</td><td>问题路由、检索、LLM 回答、批处理</td></tr>
+        <tr><td><code>api_requests.py</code></td><td>624</td><td>APIProcessor, BaseOpenaiProcessor, BaseIBMAPIProcessor, BaseGeminiProcessor, AsyncOpenaiProcessor</td><td>基础设施</td><td>多 LLM 后端统一路由 + 异步批量处理</td></tr>
+        <tr><td><code>api_request_parallel_processor.py</code></td><td>433</td><td>APIRequest, StatusTracker</td><td>基础设施</td><td>异步并发 API 请求 + 速率限制</td></tr>
+        <tr><td><code>prompts.py</code></td><td>500</td><td>各 Prompt 类 + Pydantic Schema</td><td>基础设施</td><td>所有 LLM 的 system/user prompt + 输出 Schema</td></tr>
+    </table>
+</div>
+
+<div class="ft">RAG-Challenge-2 项目全景概览 · 六步流水线完整梳理</div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true,theme:'neutral',flowchart:{useMaxWidth:true,htmlLabels:true}});</script>
+</body>
+</html>

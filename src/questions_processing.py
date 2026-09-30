@@ -146,6 +146,7 @@ class QuestionsProcessor:
             raise ValueError("No relevant context found")
         
         rag_context = self._format_retrieval_results(retrieval_results)
+        # 大模型格式化输出结果
         answer_dict = self.openai_processor.get_answer_from_rag_context(
             question=question,
             rag_context=rag_context,
@@ -155,8 +156,10 @@ class QuestionsProcessor:
         self.response_data = self.openai_processor.response_data
         if self.new_challenge_pipeline:
             pages = answer_dict.get("relevant_pages", [])
+            # 校验引用
             validated_pages = self._validate_page_references(pages, retrieval_results)
             answer_dict["relevant_pages"] = validated_pages
+            # 构建引用
             answer_dict["references"] = self._extract_references(validated_pages, company_name)
         return answer_dict
 
@@ -192,9 +195,11 @@ class QuestionsProcessor:
         
         if len(extracted_companies) == 1:
             company_name = extracted_companies[0]
+            # 检索 调用模型 检验引用 构建引用
             answer_dict = self.get_answer_for_company(company_name=company_name, question=question, schema=schema)
             return answer_dict
         else:
+            # 处理比较问题，先拆分问题，再调用get_answer_for_company
             return self.process_comparative_question(question, extracted_companies, schema)
     
     def _create_answer_detail_ref(self, answer_dict: dict, question_index: int) -> str:
@@ -274,7 +279,10 @@ class QuestionsProcessor:
         else:
             question_text = question_data.get("question")
             schema = question_data.get("schema")
+
+
         try:
+
             answer_dict = self.process_question(question_text, schema)
             
             if "error" in answer_dict:
@@ -300,6 +308,7 @@ class QuestionsProcessor:
                         "error": answer_dict["error"],
                         "answer_details": {"$ref": detail_ref},
                     }
+
             detail_ref = self._create_answer_detail_ref(answer_dict, question_index)
             if self.new_challenge_pipeline:
                 return {

@@ -32,7 +32,8 @@ class PageTextPreparation:
         for report_path in reports_paths:
             with open(report_path, 'r', encoding='utf-8') as file:
                 report_data = json.load(file)
-            
+
+            # 处理单个报告，返回处理后的报告内容 {chunk：None, Page: []}
             full_report_text = self.process_report(report_data)
             report = {"metainfo": report_data['metainfo'], "content": full_report_text}
             all_reports.append(report)
@@ -55,7 +56,9 @@ class PageTextPreparation:
 
         for page_content in self.report_data["content"]:
             page_number = page_content["page"]
+            # 处理单页文本：清理图片、页脚内容；对其他内容根据规则进行格式化，并拼接起来
             page_text = self.prepare_page_text(page_number)
+            # 修复docling 的特殊字符
             cleaned_text, corrections_count, corrections = self._clean_text(page_text)
             total_corrections += corrections_count
             corrections_list.extend(corrections)
@@ -81,15 +84,19 @@ class PageTextPreparation:
 
     def prepare_page_text(self, page_number):
         """Main method to process page blocks and return assembled string."""
+        # 获取页面数据 整页数据包含 content中的内容
         page_data = self._get_page_data(page_number)
         if not page_data or "content" not in page_data:
             return ""
 
         blocks = page_data["content"]
 
+        # 过滤掉页脚内容和图片  "page_footer", "picture"
         filtered_blocks = self._filter_blocks(blocks)
+        # 应用格式化规则
         final_blocks = self._apply_formatting_rules(filtered_blocks)
 
+        # 去除第一个和最后一个块的空格
         if final_blocks:
             final_blocks[0] = final_blocks[0].lstrip()
             final_blocks[-1] = final_blocks[-1].rstrip()
